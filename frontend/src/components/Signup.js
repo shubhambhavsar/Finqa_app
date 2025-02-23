@@ -10,11 +10,12 @@ function Signup() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
+    const backendURL = "https://finqa-backend.onrender.com";
 
     // ✅ Handle Signup Submission
     const onSubmit = async (data) => {
         try {
-            const response = await axios.post("http://127.0.0.1:5001/signup", {
+            const response = await axios.post("${backendURL}/signup", {
                 username: data.name,
                 email: data.email,
                 password: data.password
