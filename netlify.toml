@@ -1,0 +1,7 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "frontend/build"
+
+[context.production.environment]
+  REACT_APP_BACKEND_URL = "https://finqa-backend.onrender.com"
