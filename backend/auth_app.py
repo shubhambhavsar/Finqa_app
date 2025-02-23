@@ -10,9 +10,14 @@ CORS(auth_app, origins=[os.getenv("FRONTEND_URL", "https://finqa-chatbot.netlify
 bcrypt = Bcrypt(auth_app)
 
 # ✅ SQLite Configuration
-auth_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# auth_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# auth_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+auth_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 auth_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(auth_app)
+
 
 # ✅ User Model
 class User(db.Model):
