@@ -68,6 +68,14 @@ def forget_password():
     # 🔥 Here you can implement email sending functionality
     return jsonify({'status': 'success', 'message': 'Password reset link sent to your email.'})
 
+# 🚨 TEMPORARY TEST ROUTE: REMOVE AFTER DEBUGGING!
+@auth_app.route('/all_users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    user_list = [{'id': user.id, 'username': user.username, 'email': user.email} for user in users]
+    return jsonify({'users': user_list}), 200
+
+
 # ✅ Run Authentication App
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))  # Use Render's dynamic port
