@@ -30,7 +30,7 @@ class User(db.Model):
 with auth_app.app_context():
     db.create_all()
 
-# 🔐 Signup Route
+# 🔐 Signup Route with Debug Logs
 @auth_app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -38,17 +38,22 @@ def signup():
     email = data.get('email')
     password = data.get('password')
 
-    if User.query.filter_by(email=email).first():
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        print(f"⚠️ Email already registered: {email}")
         return jsonify({'status': 'error', 'message': 'Email already registered.'}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    print(f"✅ Registering new user: {username}, {email}")
+
     new_user = User(username=username, email=email, password=hashed_password)
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({'status': 'success', 'message': 'User registered successfully.'})
 
-# 🔐 Login Route
+
+# 🔐 Login Route with Debug Logs
 @auth_app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -56,10 +61,15 @@ def login():
     password = data.get('password')
 
     user = User.query.filter_by(email=email).first()
-    if user and bcrypt.check_password_hash(user.password, password):
-        return jsonify({'status': 'success', 'message': 'Login successful.', 'user_id': user.id, 'username': user.username})
-    else:
-        return jsonify({'status': 'error', 'message': 'Invalid credentials.'}), 401
+    if user:
+        print(f"🔍 Login attempt for: {email}")
+        if bcrypt.check_password_hash(user.password, password):
+            print(f"✅ Successful login for user: {email}")
+            return jsonify({'status': 'success', 'message': 'Login successful.', 'user_id': user.id, 'username': user.username})
+
+    print(f"❌ Invalid credentials for email: {email}")
+    return jsonify({'status': 'error', 'message': 'Invalid credentials.'}), 401
+
 
 # 🔑 Forget Password Route (Reset functionality placeholder)
 @auth_app.route('/forget_password', methods=['POST'])
@@ -80,6 +90,13 @@ def get_all_users():
     users = User.query.all()
     user_list = [{'id': user.id, 'username': user.username, 'email': user.email} for user in users]
     return jsonify({'users': user_list}), 200
+
+# 🚨 TEMPORARY TEST ROUTE: Verify database connection (REMOVE after testing)
+@auth_app.route('/check_db', methods=['GET'])
+def check_db_connection():
+    db_uri = auth_app.config['SQLALCHEMY_DATABASE_URI']
+    return jsonify({'database_uri': db_uri}), 200
+
 
 
 # ✅ Run Authentication App
