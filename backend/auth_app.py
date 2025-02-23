@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 
 # ✅ Initialize Flask App
 auth_app = Flask(__name__)
-CORS(auth_app)
+CORS(auth_app, origins=["https://finqa-chatbot.netlify.app"])
 bcrypt = Bcrypt(auth_app)
 
 # ✅ SQLite Configuration

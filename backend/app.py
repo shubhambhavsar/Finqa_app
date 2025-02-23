@@ -7,7 +7,7 @@ import os
 from real_chatbot import detect_company, query_llm, extract_sql_and_notes, execute_sql  # Import your chatbot functions
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://finqa-chatbot.netlify.app"])
 
 # ✅ SQLite DB Setup
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chats.db'
@@ -190,4 +190,4 @@ def query_chatbot():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True)

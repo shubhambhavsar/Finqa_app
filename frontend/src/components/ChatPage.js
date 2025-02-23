@@ -15,6 +15,8 @@ function ChatPage() {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const backendURL = "https://finqa-backend.onrender.com";
+
     const chatEndRef = useRef(null);
     const navigate = useNavigate();
 
@@ -59,7 +61,7 @@ function ChatPage() {
     // ✅ Fetch chat history for the current session
     const fetchChatHistory = async (id) => {
         try {
-            const response = await axios.get(`http://127.0.0.1:5000/get_chats/${id}`);
+            const response = await axios.get(`${backendURL}/get_chats/${id}`);
             setCurrentChat(response.data);
         } catch (error) {
             console.error("Error fetching chat history:", error);
@@ -70,12 +72,12 @@ function ChatPage() {
     const fetchAllChatSessions = async () => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await axios.get(`http://127.0.0.1:5000/get_all_sessions/${userId}`);
+            const response = await axios.get(`${backendURL}/get_all_sessions/${userId}`);
             
             // Filter out empty chats (sessions with no messages)
             const validSessions = await Promise.all(
                 response.data.map(async (chat) => {
-                    const chatMessages = await axios.get(`http://127.0.0.1:5000/get_chats/${chat.session_id}`);
+                    const chatMessages = await axios.get(`${backendURL}/get_chats/${chat.session_id}`);
                     return chatMessages.data.length > 0 ? chat : null;  // Only keep sessions with messages
                 })
             );
@@ -99,7 +101,7 @@ function ChatPage() {
     
         try {
             // ✅ Updated API call to the real chatbot
-            const response = await axios.post("http://127.0.0.1:5000/query_chatbot", {
+            const response = await axios.post("${backendURL}/query_chatbot", {
                 question: message,
                 session_id: sessionId,  // Pass the session ID dynamically
                 user_id: user,        // Pass the user ID dynamically
@@ -129,7 +131,7 @@ function ChatPage() {
     const saveChatToBackend = async (chatMessage) => {
         try {
             const userId = localStorage.getItem("userId");
-            await axios.post("http://127.0.0.1:5000/save_chat", {
+            await axios.post("${backendURL}/save_chat", {
                 sender: chatMessage.sender,
                 message: chatMessage.message,
                 session_id: sessionId,
@@ -144,7 +146,7 @@ function ChatPage() {
     const startNewChat = async () => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await axios.post("http://127.0.0.1:5000/new_session", { user_id: userId });
+            const response = await axios.post("${backendURL}/new_session", { user_id: userId });
     
             const newSessionId = response.data.session_id;
             localStorage.setItem("sessionId", newSessionId);
@@ -160,7 +162,7 @@ function ChatPage() {
 
     const loadChatSession = async (selectedSessionId) => {
         try {
-            const response = await axios.get(`http://127.0.0.1:5000/get_chat/${selectedSessionId}`);
+            const response = await axios.get(`${backendURL}/get_chat/${selectedSessionId}`);
             setSessionId(selectedSessionId);
             setCurrentChat(response.data.messages);  // Load the fetched messages
         } catch (error) {
@@ -173,7 +175,7 @@ function ChatPage() {
     const handleChatSelection = async (selectedSessionId) => {
         try {
             // Fetch chat messages for the selected session from the backend
-            const response = await axios.get(`http://127.0.0.1:5000/get_chat/${selectedSessionId}`);
+            const response = await axios.get(`${backendURL}/get_chat/${selectedSessionId}`);
             
             // Update state with the selected session's messages
             setSessionId(selectedSessionId);
@@ -189,7 +191,7 @@ function ChatPage() {
         if (!confirmDelete) return;
     
         try {
-            await axios.delete(`http://127.0.0.1:5000/delete_chat/${sessionIdToDelete}`);
+            await axios.delete(`${backendURL}/delete_chat/${sessionIdToDelete}`);
     
             // Remove from chat history immediately
             setChatHistory((prevHistory) =>
