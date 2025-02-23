@@ -70,4 +70,4 @@ def forget_password():
 
 # ✅ Run Authentication App
 if __name__ == '__main__':
-    auth_app.run(port=5001, debug=True)
+    auth_app.run(host='0.0.0.0', port=5001, debug=False)
