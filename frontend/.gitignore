@@ -1,3 +1,12 @@
-build/
-.env
+# Ignore Python-related files
+__pycache__/
+*.pyc
+instance/
+
+# Ignore Node-related files
 node_modules/
+frontend/build/
+frontend/.env
+
+# Ignore logs
+*.log
