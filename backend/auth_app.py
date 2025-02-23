@@ -98,7 +98,6 @@ def check_db_connection():
     return jsonify({'database_uri': db_uri}), 200
 
 
-
 # ✅ Run Authentication App
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))  # Use Render's dynamic port
