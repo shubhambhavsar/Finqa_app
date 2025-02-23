@@ -14,7 +14,7 @@ function Login() {
 
     const onSubmit = async (data) => {
         try {
-            const response = await axios.post("${backendURL}/login", data);
+            const response = await axios.post(`${backendURL}/login`, data);
             if (response.data.status === "success") {
                 localStorage.setItem("user", JSON.stringify(response.data)); // Store user session
                 localStorage.setItem("userId", response.data.user_id); // Store userId for chat history

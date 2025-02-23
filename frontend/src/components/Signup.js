@@ -15,7 +15,7 @@ function Signup() {
     // ✅ Handle Signup Submission
     const onSubmit = async (data) => {
         try {
-            const response = await axios.post("${backendURL}/signup", {
+            const response = await axios.post(`${backendURL}/signup`, {
                 username: data.name,
                 email: data.email,
                 password: data.password
