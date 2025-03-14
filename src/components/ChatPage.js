@@ -52,7 +52,7 @@ function ChatPage() {
         }
     
         // ✅ Initialize session ID
-        const storedSessionId = localStorage.getItem("sessionId") || generateNewSessionId();
+        const storedSessionId = localStorage.getItem("sessionId");
         const userId = localStorage.getItem("userId");
     
         if (!storedSessionId) {
