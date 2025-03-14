@@ -10,6 +10,10 @@ from classifier import classify_question  # Import the classification logic
 from dotenv import load_dotenv
 import oracledb
 
+import nltk
+nltk.download('wordnet')
+nltk.download('punkt')
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -149,29 +153,42 @@ def get_chat(session_id):
 # ✅ Route to Query Real Chatbot
 @app.route('/query_chatbot', methods=['POST'])
 def query_chatbot():
-    data = request.get_json()
-    print("Received data:", data)  # 🔍 Debug log
+    try:
+        data = request.get_json()
+        print("Received data:", data)  # 🔍 Debug log
 
-    user_question = data.get("question")
-    session_id = data.get("session_id")
-    user_id = data.get("user_id")
-    selected_company = data.get("selected_company")  # ✅ Matching key name
+        user_question = data.get("question")
+        session_id = data.get("session_id")
+        user_id = data.get("user_id")
+        selected_company = data.get("selected_company")
 
-    print("User Question:", user_question)
-    print("Session ID:", session_id)
-    print("User ID:", user_id)
-    print("Selected Company:", selected_company)
+        print("User Question:", user_question)
+        print("Session ID:", session_id)
+        print("User ID:", user_id)
+        print("Selected Company:", selected_company)
 
-    # Validation
-    if not user_question or not session_id or not user_id or not selected_company:
-        return jsonify({"error": "Invalid request data - Missing required fields"}), 400
+        # Validation
+        if not user_question or not session_id or not user_id or not selected_company:
+            return jsonify({"error": "Invalid request data - Missing required fields"}), 400
 
-    classification = classify_question(user_question)
+        print("🔍 Classifying question...")
+        classification = classify_question(user_question)
+        print(f"✅ Classification result: {classification}")
 
-    if classification == 'numerical':
-        return handle_numerical_query(user_question, session_id, user_id, selected_company)
-    else:
-        return handle_contextual_query(user_question, selected_company)
+        if classification == 'numerical':
+            print("🔍 Handling numerical query...")
+            response = handle_numerical_query(user_question, session_id, user_id, selected_company)
+        else:
+            print("🔍 Handling contextual query...")
+            response = handle_contextual_query(user_question, selected_company)
+
+        print("✅ Response generated:", response)
+        return response
+
+    except Exception as e:
+        print("❌ Error in /query_chatbot:", str(e))  # 🔥 Log the exact error
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+
     
 @app.route("/", methods=["GET"])
 def home():
