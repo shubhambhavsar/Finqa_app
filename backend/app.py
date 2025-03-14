@@ -5,14 +5,29 @@ import uuid
 import logging
 import os
 from real_chatbot import detect_company, query_llm, extract_sql_and_notes, execute_sql  # Import your chatbot functions
+from real_chatbot_rag import load_faiss_index, query_llm_groq
+from classifier import classify_question  # Import the classification logic
+from dotenv import load_dotenv
+import oracledb
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://finqa-chatbot.netlify.app"])
+CORS(app)
 
 # ✅ SQLite DB Setup
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chats.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# Retrieve database configuration
+db_config = {
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "dsn": os.getenv("DB_DSN"),
+        "wallet_location": os.getenv("DB_WALLET_LOCATION"),
+    }
 
 # ✅ Chat Model
 class ChatSession(db.Model):
@@ -135,29 +150,88 @@ def get_chat(session_id):
 @app.route('/query_chatbot', methods=['POST'])
 def query_chatbot():
     data = request.get_json()
+    print("Received data:", data)  # 🔍 Debug log
+
     user_question = data.get("question")
     session_id = data.get("session_id")
     user_id = data.get("user_id")
+    selected_company = data.get("selected_company")  # ✅ Matching key name
 
-    if not user_question or not session_id or not user_id:
-        return jsonify({"error": "Invalid request data"}), 400
+    print("User Question:", user_question)
+    print("Session ID:", session_id)
+    print("User ID:", user_id)
+    print("Selected Company:", selected_company)
 
-    ddl_directory = r"backend\Oracle_DDLs"
-    model_name = "llama-3.1-8b-instant"
-    api_keys = [
-        "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",
-        "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",
-        "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",
-        "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"
-    ]
-    db_config = {
-        "user": "ADMIN",
-        "password": "Passwordtestdb@1",
-        "dsn": "testdb_medium",
-        "wallet_location": r"backend\Wallet_testdb"
-    }
+    # Validation
+    if not user_question or not session_id or not user_id or not selected_company:
+        return jsonify({"error": "Invalid request data - Missing required fields"}), 400
 
-    ddl_prefix = detect_company(user_question)
+    classification = classify_question(user_question)
+
+    if classification == 'numerical':
+        return handle_numerical_query(user_question, session_id, user_id, selected_company)
+    else:
+        return handle_contextual_query(user_question, selected_company)
+
+def get_ddl_prefix_from_db(company_name):
+    """Fetch DDL prefix from the Oracle database mapping table."""
+    connection = oracledb.connect(
+            user=db_config["user"],
+            password=db_config["password"],
+            dsn=db_config["dsn"],
+            config_dir=db_config["wallet_location"],
+            wallet_location=db_config["wallet_location"],
+            wallet_password=db_config["password"]
+            )
+    cursor = connection.cursor()
+
+    query = "SELECT DDL_PREFIX FROM COMPANY_MAPPING WHERE LOWER(COMPANY_NAME) = LOWER(:company_name)"
+    cursor.execute(query, {"company_name": company_name})
+    
+    result = cursor.fetchone()
+    cursor.close()
+    connection.close()
+
+    return result[0] if result else None
+
+def get_company_names_from_db():
+    """Fetch distinct company names from the COMPANY_MAPPING table."""
+    connection = oracledb.connect(
+        user=db_config["user"],
+        password=db_config["password"],
+        dsn=db_config["dsn"],
+        config_dir=db_config["wallet_location"],
+        wallet_location=db_config["wallet_location"],
+        wallet_password=db_config["password"]
+    )
+    cursor = connection.cursor()
+    query = "SELECT DISTINCT UPPER(COMPANY_NAME) FROM COMPANY_MAPPING"
+    cursor.execute(query)
+    
+    companies = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    connection.close()
+    
+    return companies
+
+@app.route('/api/companies', methods=['GET'])
+def fetch_companies():
+    """API Endpoint to get company names"""
+    return jsonify(get_company_names_from_db())
+
+def handle_numerical_query(user_question, session_id, user_id, selected_company):
+    # ✅ Validate if a company is selected
+    if not selected_company:
+        return jsonify({"error": "No company selected for numerical query"}), 400
+    ddl_directory = "Oracle_DDLs"
+    model_name = "llama-3.3-70b-versatile"
+
+    # Retrieve API keys as a list
+    api_keys = os.getenv("API_KEYS").split(",")
+
+    # ddl_prefix = detect_company(selected_company)
+    ddl_prefix = get_ddl_prefix_from_db(selected_company)
+
     if ddl_prefix:
         ddl_file_path = os.path.join(ddl_directory, f"{ddl_prefix}_ddl.sql")
     else:
@@ -180,15 +254,34 @@ def query_chatbot():
         print(f"Generated SQL Query: {sql_query}")
         results, columns, exec_time, error_msg = execute_sql(sql_query, db_config)
         if results:
-            # Convert list-like results to a readable format
             formatted_results = str(results[0][0]) if results else "No data found"
             return jsonify({"response": formatted_results}), 200
         else:
             return jsonify({"error": error_msg}), 500
     else:
         return jsonify({"error": "Failed to extract SQL query from LLM response."}), 500
+    
+# ✅ Handle Contextual (RAG-based) Queries
+def handle_contextual_query(user_question, selected_company):
+    vector_store = load_faiss_index()
+    if vector_store is None:
+        return jsonify({"error": "Vector store not available. Please run the embedding process first."}), 500
+    
+    final_query = f"[Company: {selected_company}] {user_question}"
+
+    retriever = vector_store.as_retriever(search_kwargs={"k": 4})
+    response, relevant_docs = query_llm_groq(final_query, retriever)
+
+    if isinstance(response, str) and response.startswith("❌"):
+        return jsonify({"error": response}), 500
+
+    sources = [{"source": doc["source"], "snippet": doc["text"][:200]} for doc in relevant_docs]
+    return jsonify({
+        "response": response,
+        "sources": sources
+    }), 200
+
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Use Render's dynamic port
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True, host='127.0.0.1', port=5000)

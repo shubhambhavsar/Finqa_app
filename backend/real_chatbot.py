@@ -10,7 +10,7 @@ from datetime import datetime
 from groq import Groq
 import itertools
 
-def detect_company(user_input):
+def detect_company(company_name):
     """Maps company names from user input to corresponding DDL filenames."""
     company_map = {
         "amazon": "amzn",
@@ -28,16 +28,17 @@ def detect_company(user_input):
         "shell": "shel",
         "att": "t",
         "verizon": "vz",
-        "amd": "amd",
+        "amd": "amd",       
         "mastercard": "ma",
         "pepsico": "pep"
     }
 
-    for company, ddl_prefix in company_map.items():
-        if company.lower() in user_input.lower():
-            return ddl_prefix  # Return the prefix for DDL filename
+    # for company, ddl_prefix in company_map.items():
+    #     if company.lower() in user_input.lower():
+    #         return ddl_prefix  # Return the prefix for DDL filename
 
-    return None  # Return None if the company isn’t recognized
+    # return None  # Return None if the company isn’t recognized
+    return company_map.get(company_name.lower(), None)
 
 
 
@@ -72,51 +73,59 @@ def query_llm(user_question, ddl_content, model_name, api_key, max_retries=5):
     logging.debug("Querying LLM API using model: %s", model_name)
     
     prompt = f"""
-### System instructions:
-You are a highly intelligent and experienced SQL developer that can write precise, minimal and appropriate queries based on natural language questions.  
-Based on the DDL below, generate an SQL query by deriving appropriate columns, correct filters and table names from the user query in natural language that outputs a numerical value. 
-
 ### Output format:
-The SQL query should ALWAYS start with "SQL:" and be the ONLY OUTPUT. For example "SQL:SELECT * FROM TABLE;".  
+The SQL query should ALWAYS start with "SQL:". For example "SQL:SELECT * FROM TABLE;".
 If you could not generate the SQL query, ONLY reply with "NOTE: [issue with creating the query].".  
 ALWAYS use "" (double quotes) for table and column names.
 ALWAYS use ''(single quotes) for filtering "METRICS" column.
 ALWAYS prefix "ADMIN" to table names.
-ALWAYS cross-check what "METRICS" filter to use by going through the insert statements in the DDL for "METRICS" column.
-
-
-### Information about the data:
-The tables have financial data of companies. 
-The column named "METRICS" in all tables just have string values of various financial metrics. 
-The numerical values for a financial metric are stored inside the rest of the columns of that metric's row that contain quarterly information of that metric.
-For example, Q3_2024 means Quarter 3 of 2024. 
-Only extract values from "Current" column if the user specifies "current" data of a year in the input.
-If the user does not specify a quarter, take all relevant quarters for the year mentioned in the user query and perform the specific operation. 
-Perform the required mathematical operation in the SQL query based on what the user specified.
-
+ALWAYS MAKE SURE THE SQL SYNTAX IS CORRECT.
+ 
 ### Examples:
 User input: What was McDonald's revenue in Q3 2024?
-Your output: SELECT "Q3_2024" FROM "ADMIN"."MCD_INCOME_QUARTERLY" WHERE "METRICS" = 'Revenue'; 
-
+Your SQL output: SELECT "Q3_2024" FROM "ADMIN"."MCD_INCOME_QUARTERLY" WHERE "METRICS" = 'Revenue';
+ 
 User input: How much gross profit did Coca-Cola report in 2023?
-Your output: SELECT ("Q1_2023" + "Q2_2023" + "Q3_2023" + "Q4_2023")  FROM "ADMIN"."KO_INCOME_QUARTERLY" WHERE METRICS = 'Gross Profit';
-
-User input: What was the ratio of quarter 3 2024 and q2 2024 for Meta's cash and equivalents?
-Your output: SELECT ("Q3_2024"/"Q2_2024") FROM "ADMIN"."META_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Cash and Equivalents'
-
-User input: During Q3 2024, what was the proportion or ratio of Property Plant and Equipment to Total Assets for amazon?
-Your output: SELECT ((SELECT "Q3_2024" FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Property Plant and Equipment') / (SELECT "Q3_2024" FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Total Assets')) 
-
+Your SQL output: SELECT ("Q1_2023" + "Q2_2023" + "Q3_2023" + "Q4_2023")  FROM "ADMIN"."KO_INCOME_QUARTERLY" WHERE METRICS = 'Gross Profit';
+ 
+User input: What was the change in operating expenses from first quarter of 2024 to the second quarter for meta?
+Your SQL output: SELECT ("Q2_2024" - "Q1_2024") FROM "ADMIN"."META_INCOME_QUARTERLY" WHERE "METRICS" = 'Operating Expenses';
+ 
+User input: What's the ratio of quarter 3 2024 and q2 2024 for Meta's cash and equivalents?
+Your SQL output: SELECT ("Q3_2024"/"Q2_2024") FROM "ADMIN"."META_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Cash and Equivalents'
+ 
+User input: What is the ratio of Accounts Receivable to Total Current Assets in Q3 2024 for AMD?
+or User input: What proportion of Accounts Receivable is of Total Current Assets in Q3 2024 for AMD?
+Your SQL output: SELECT ar."Q3_2024" * 1.0 / tca."Q3_2024" AS ratio FROM "ADMIN"."AMD_BALANCE_SHEET_QUARTERLY" ar JOIN "ADMIN"."AMD_BALANCE_SHEET_QUARTERLY" tca ON ar."METRICS" = 'Accounts Receivable' AND tca."METRICS" = 'Total Current Assets';
+ 
 User input: What was the average Book Value Per Share for the first three quarters of 2024 for Amazon?
-Your output: SELECT ("Q1_2024"+"Q2_2024"+"Q3_2024")/3 FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" where  "METRICS" = 'Book Value Per Share'
-
+Your SQL output: SELECT ("Q1_2024"+"Q2_2024"+"Q3_2024")/3 FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" where  "METRICS" = 'Book Value Per Share'
+ 
 User input: What was the percentage change in Cash and Equivalents from Q2 2024 to Q3 2024 for amazon?
-Your output: SELECT ("Q3_2024"- "Q2_2024")/"Q2_2024" * 100 FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Cash and Equivalents' 
-    
+Your SQL output: SELECT ("Q3_2024"- "Q2_2024")/"Q2_2024" * 100 FROM "ADMIN"."AMZN_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Cash and Equivalents'
+ 
+User input: Give me the minimum value of Accounts Receivable in 2023 for Meta?
+Your SQL output: SELECT LEAST("Q1_2023", "Q2_2023", "Q3_2023", "Q4_2023") FROM "ADMIN"."META_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Accounts Receivable'
+ 
+User input: Provide me with the maximum value of Accounts Receivable in 2023 for Meta?
+Your SQL output: SELECT GREATEST("Q1_2023", "Q2_2023", "Q3_2023", "Q4_2023") FROM "ADMIN"."META_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Accounts Receivable'
+ 
+User input: What's the year-over-year change in Retained Earnings from Q3 2023 to Q3 2024 for AMD?
+Your SQL output: SELECT ("Q3_2024" - "Q3_2023") FROM "ADMIN"."AMD_BALANCE_SHEET_QUARTERLY" WHERE "METRICS" = 'Retained Earnings';
+ 
+User input: How did the EPS Growth in Q3 2024 compare to Q3 2023 for Amazon?
+Your SQL output: SELECT ("Q3_2024" - "Q3_2023") FROM "ADMIN"."AMZN_INCOME_QUARTERLY" WHERE "METRICS" = 'EPS Growth';
+\n\n
+ 
+### System instructions:
+You generate SQL queries based on natural language questions.  
+Based on the DDL below, generate an SQL query.
+ 
 ## ddl = \"\"\"{ddl_content}\"\"\"
 
 ## Natural Language Query
 query = "{user_question}"
+\n\n
 
 """
     retries = 0
@@ -262,55 +271,3 @@ def process_questions(company_dfs, ddl_directory, model_name, db_config, api_key
             save_progress(df.iloc[[index]], model_name, mode="w" if first_sheet else "a")  
 
         first_sheet = False  # Switch to append mode after first sheet
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-
-    # ✅ Set paths for DDLs and database configuration
-    ddl_directory = r"backend\Oracle_DDLs"
-    db_config = {
-        "user": "ADMIN",
-        "password": "Passwordtestdb@1",
-        "dsn": "testdb_medium",
-        "wallet_location": r"backend\Wallet_testdb"
-    }
-
-    api_keys = [
-        "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",
-        "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",
-        "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",
-        "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"
-    ]
-    model_name = "llama-3.1-8b-instant"
-
-    # ✅ User inputs for testing
-    user_question = input("Enter your question: ")
-    company = "goog"  # Set a default company or detect dynamically based on input
-
-    ddl_file_path = os.path.join(ddl_directory, f"{company}_ddl.sql")
-    if not os.path.exists(ddl_file_path):
-        logging.error("DDL not found for the specified company.")
-        exit()
-
-    with open(ddl_file_path, "r", encoding="utf-8") as ddl_file:
-        ddl_content = ddl_file.read().strip()
-
-    # ✅ Send the query to LLM
-    api_key = next(itertools.cycle(api_keys))
-    llm_output, llm_time = query_llm(user_question, ddl_content, model_name, api_key)
-
-    if not llm_output:
-        logging.error("Failed to generate a response from LLM.")
-    else:
-        logging.info("LLM Output: %s", llm_output)
-
-        # ✅ Extract SQL and execute it
-        sql_query, notes = extract_sql_and_notes(llm_output)
-        if sql_query:
-            results, columns, exec_time, error_msg = execute_sql(sql_query, db_config)
-            if results:
-                print(f"Query executed successfully:\nResults: {results}")
-            else:
-                print(f"SQL Execution Error: {error_msg}")
-        else:
-            print("Failed to extract SQL query from LLM response.")
