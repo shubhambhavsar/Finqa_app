@@ -4,6 +4,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 import nltk
 nltk.download('wordnet')
+nltk.download('punkt')
 
 # Paths to saved artifacts
 xgboost_model_path = 'artifacts/rf_model.pkl'
