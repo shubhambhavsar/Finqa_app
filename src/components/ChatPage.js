@@ -18,6 +18,8 @@ function ChatPage() {
     const chatEndRef = useRef(null);
     const navigate = useNavigate();
 
+    const CHATBOT_API_URL = "https://finqa-app.onrender.com";
+
     // ✅ Auto-scroll to the latest message
     const scrollToBottom = () => {
         if (chatEndRef.current) {
@@ -30,7 +32,7 @@ function ChatPage() {
     useEffect(() => {
             async function fetchCompanies() {
                 try {
-                    const response = await axios.get("http://127.0.0.1:5000/api/companies");
+                    const response = await axios.get(`${CHATBOT_API_URL}/api/companies`);
                     setCompanyList(response.data);  // ✅ Store fetched company names
                 } catch (error) {
                     console.error("Error fetching company names:", error);
@@ -70,26 +72,17 @@ function ChatPage() {
         scrollToBottom();
     }, [currentChat]);
 
-    // // ✅ Fetch chat history for the current session
-    // const fetchChatHistory = async (id) => {
-    //     try {
-    //         const response = await axios.get(`http://127.0.0.1:5000/get_chats/${id}`);
-    //         setCurrentChat(response.data);
-    //     } catch (error) {
-    //         console.error("Error fetching chat history:", error);
-    //     }
-    // };
 
     // ✅ Fetch all chat sessions for displaying history
     const fetchAllChatSessions = async () => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await axios.get(`http://127.0.0.1:5000/get_all_sessions/${userId}`);
+            const response = await axios.get(`${CHATBOT_API_URL}/get_all_sessions/${userId}`);
             
             // Filter out empty chats (sessions with no messages)
             const validSessions = await Promise.all(
                 response.data.map(async (chat) => {
-                    const chatMessages = await axios.get(`http://127.0.0.1:5000/get_chats/${chat.session_id}`);
+                    const chatMessages = await axios.get(`${CHATBOT_API_URL}/get_chats/${chat.session_id}`);
                     return chatMessages.data.length > 0 ? chat : null;  // Only keep sessions with messages
                 })
             );
@@ -113,7 +106,7 @@ function ChatPage() {
     
         try {
             // ✅ Updated API call to the real chatbot
-            const response = await axios.post("http://127.0.0.1:5000/query_chatbot", {
+            const response = await axios.post(`${CHATBOT_API_URL}/query_chatbot`, {
                 question: message,
                 session_id: sessionId,  // Pass the session ID dynamically
                 user_id: user.user_id,
@@ -144,7 +137,7 @@ function ChatPage() {
     const saveChatToBackend = async (chatMessage) => {
         try {
             const userId = localStorage.getItem("userId");
-            await axios.post("http://127.0.0.1:5000/save_chat", {
+            await axios.post(`${CHATBOT_API_URL}/save_chat`, {
                 sender: chatMessage.sender,
                 message: chatMessage.message,
                 session_id: sessionId,
@@ -159,7 +152,7 @@ function ChatPage() {
     const startNewChat = async () => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await axios.post("http://127.0.0.1:5000/new_session", { user_id: userId });
+            const response = await axios.post(`${CHATBOT_API_URL}/new_session`, { user_id: userId });
     
             const newSessionId = response.data.session_id;
             localStorage.setItem("sessionId", newSessionId);
@@ -175,7 +168,7 @@ function ChatPage() {
 
     const loadChatSession = async (selectedSessionId) => {
         try {
-            const response = await axios.get(`http://127.0.0.1:5000/get_chat/${selectedSessionId}`);
+            const response = await axios.get(`${CHATBOT_API_URL}/get_chat/${selectedSessionId}`);
             setSessionId(selectedSessionId);
             setCurrentChat(response.data.messages);  // Load the fetched messages
         } catch (error) {
@@ -183,20 +176,6 @@ function ChatPage() {
         }
     };
     
-      
-    
-    // const handleChatSelection = async (selectedSessionId) => {
-    //     try {
-    //         // Fetch chat messages for the selected session from the backend
-    //         const response = await axios.get(`http://127.0.0.1:5000/get_chat/${selectedSessionId}`);
-            
-    //         // Update state with the selected session's messages
-    //         setSessionId(selectedSessionId);
-    //         setCurrentChat(response.data.messages);  // Display chat messages in the chat window
-    //     } catch (error) {
-    //         console.error("Error fetching selected chat:", error);
-    //     }
-    // };
     
     // ✅ Delete a chat session
     const deleteChatSession = async (sessionIdToDelete) => {
@@ -204,7 +183,7 @@ function ChatPage() {
         if (!confirmDelete) return;
     
         try {
-            await axios.delete(`http://127.0.0.1:5000/delete_chat/${sessionIdToDelete}`);
+            await axios.delete(`${CHATBOT_API_URL}/delete_chat/${sessionIdToDelete}`);
     
             // Remove from chat history immediately
             setChatHistory((prevHistory) =>

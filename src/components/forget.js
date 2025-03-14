@@ -9,9 +9,11 @@ function ForgetPassword() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [message, setMessage] = useState("");
 
+    const AUTH_API_URL = "https://finqa-auth-app.onrender.com";
+
     const onSubmit = async (data) => {
         try {
-            const response = await axios.post("http://127.0.0.1:5001/forget_password", data);
+            const response = await axios.post(`${AUTH_API_URL}/forget_password`, data);
             if (response.data.status === "success") {
                 setMessage("Reset link sent to your email.");
                 navigate('/login');
