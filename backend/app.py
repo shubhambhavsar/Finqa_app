@@ -172,6 +172,10 @@ def query_chatbot():
         return handle_numerical_query(user_question, session_id, user_id, selected_company)
     else:
         return handle_contextual_query(user_question, selected_company)
+    
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "success", "message": "Chatbot service is running."})
 
 def get_ddl_prefix_from_db(company_name):
     """Fetch DDL prefix from the Oracle database mapping table."""
