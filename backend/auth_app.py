@@ -68,6 +68,6 @@ def forget_password():
     # 🔥 Here you can implement email sending functionality
     return jsonify({'status': 'success', 'message': 'Password reset link sent to your email.'})
 
-# ✅ Run Authentication App
 if __name__ == '__main__':
-    auth_app.run(port=5001, debug=True)
+    port = int(os.environ.get("PORT", 10001))  # Default to 10001 if PORT is not set
+    auth_app.run(debug=False, host='0.0.0.0', port=port)

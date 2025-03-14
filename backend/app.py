@@ -282,6 +282,6 @@ def handle_contextual_query(user_question, selected_company):
     }), 200
 
 
-
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    port = int(os.environ.get("PORT", 10000))  # Default to 10000 if PORT is not set
+    app.run(debug=False, host='0.0.0.0', port=port)
