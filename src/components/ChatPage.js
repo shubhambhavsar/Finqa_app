@@ -1,3 +1,4 @@
+import { useLoader } from "./LoaderContext";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,6 +18,34 @@ function ChatPage() {
 
     const chatEndRef = useRef(null);
     const navigate = useNavigate();
+
+    const { setLoading } = useLoader();
+
+    useEffect(() => {
+    // Add a global request interceptor
+        const requestInterceptor = axios.interceptors.request.use((config) => {
+            setLoading(true);
+            return config;
+        });
+
+    // Add a global response interceptor
+    const responseInterceptor = axios.interceptors.response.use(
+        (response) => {
+        setLoading(false);
+        return response;
+        },
+        (error) => {
+        setLoading(false);
+        return Promise.reject(error);
+        }
+    );
+
+    // Cleanup interceptors on unmount
+    return () => {
+        axios.interceptors.request.eject(requestInterceptor);
+        axios.interceptors.response.eject(responseInterceptor);
+    };
+    }, [setLoading]);
 
     const CHATBOT_API_URL = "https://finqa-app.onrender.com";
 

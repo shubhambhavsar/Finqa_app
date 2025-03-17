@@ -10,35 +10,35 @@ from datetime import datetime
 from groq import Groq
 import itertools
 
-def detect_company(company_name):
-    """Maps company names from user input to corresponding DDL filenames."""
-    company_map = {
-        "amazon": "amzn",
-        "mcdonald's": "mcd",
-        "meta": "meta",
-        "coca-cola": "ko",
-        "google": "goog",
-        "alphabet": "goog",  # Google's parent company
-        "s&p global": "spgi",
-        "tesla": "tsla",
-        "microsoft": "msft",  # Assuming you have this DDL
-        "netflix": "nflx",
-        "hsbc": "hsbc",
-        "jpmorgan": "jpm",
-        "shell": "shel",
-        "att": "t",
-        "verizon": "vz",
-        "amd": "amd",       
-        "mastercard": "ma",
-        "pepsico": "pep"
-    }
+# def detect_company(company_name):
+#     """Maps company names from user input to corresponding DDL filenames."""
+#     company_map = {
+#         "amazon": "amzn",
+#         "mcdonald's": "mcd",
+#         "meta": "meta",
+#         "coca-cola": "ko",
+#         "google": "goog",
+#         "alphabet": "goog",  # Google's parent company
+#         "s&p global": "spgi",
+#         "tesla": "tsla",
+#         "microsoft": "msft",  # Assuming you have this DDL
+#         "netflix": "nflx",
+#         "hsbc": "hsbc",
+#         "jpmorgan": "jpm",
+#         "shell": "shel",
+#         "att": "t",
+#         "verizon": "vz",
+#         "amd": "amd",       
+#         "mastercard": "ma",
+#         "pepsico": "pep"
+#     }
 
-    # for company, ddl_prefix in company_map.items():
-    #     if company.lower() in user_input.lower():
-    #         return ddl_prefix  # Return the prefix for DDL filename
+#     # for company, ddl_prefix in company_map.items():
+#     #     if company.lower() in user_input.lower():
+#     #         return ddl_prefix  # Return the prefix for DDL filename
 
-    # return None  # Return None if the company isn’t recognized
-    return company_map.get(company_name.lower(), None)
+#     # return None  # Return None if the company isn’t recognized
+#     return company_map.get(company_name.lower(), None)
 
 
 
