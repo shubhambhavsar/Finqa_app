@@ -4,7 +4,7 @@ from flask_cors import CORS
 import uuid
 import logging
 import os
-from real_chatbot import detect_company, query_llm, extract_sql_and_notes, execute_sql  # Import your chatbot functions
+from real_chatbot import query_llm, extract_sql_and_notes, execute_sql  # Import your chatbot functions
 from real_chatbot_rag import load_faiss_index, query_llm_groq
 from classifier import classify_question  # Import the classification logic
 from dotenv import load_dotenv
