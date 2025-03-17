@@ -8,5 +8,11 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Keep-Alive Request
-        run: curl -s https://finqaai.netlify.app/
+      - name: Ping Backend (Main API)
+        run: curl -s --max-time 10 https://finqa-app.onrender.com/ || echo "Failed to ping backend main API"
+
+      - name: Ping Backend (Auth API)
+        run: curl -s --max-time 10 https://finqa-auth-app.onrender.com/ || echo "Failed to ping backend auth API"
+
+      - name: Ping Frontend
+        run: curl -s --max-time 10 https://finqaai.netlify.app/ || echo "Failed to ping frontend"
