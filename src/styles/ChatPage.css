@@ -13,7 +13,7 @@ html, body {
 
     .chat-app-input-section {
         bottom: 15px; /* ✅ Lifts input box up ONLY on small screens */
-        margin-bottom: 20px;
+        margin-bottom: 40px;
     }
 
     .chat-app-button-group {
