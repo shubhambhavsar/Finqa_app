@@ -310,7 +310,7 @@ function ChatPage() {
 
                 <div className="chat-app-content">
                     {/* ✅ Sidebar Section */}
-                    <div className="chat-app-sidebar">
+                    <div className={`chat-app-sidebar ${isSidebarOpen ? "active" : ""}`}>
                         <div className="chat-app-company-search">
                             <input
                                 type="text"
@@ -363,6 +363,11 @@ function ChatPage() {
                             </div>
                         )}
                     </div>
+                    
+                    {/* ✅ Menu Button (Separate from Sidebar) */}
+                    <button className="chat-app-menu-btn" onClick={toggleSidebar}>
+                        ☰
+                    </button>
 
                     {/* ✅ Chat Window Section */}
                     <div className="chat-app-window">
@@ -389,8 +394,11 @@ function ChatPage() {
                                 onChange={(e) => setMessage(e.target.value)}
                                 onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                             />
-                            <button onClick={sendMessage} className="chat-app-send-btn">Send</button>
-                            <button onClick={startNewChat} className="chat-app-new-chat-btn">New Chat</button>
+                            {/* ✅ Group buttons together for responsiveness */}
+                            <div className="chat-app-button-group">
+                                <button onClick={sendMessage} className="chat-app-send-btn">Send</button>
+                                <button onClick={startNewChat} className="chat-app-new-chat-btn">New Chat</button>
+                            </div>
                         </div>
                     </div>
                 </div>
