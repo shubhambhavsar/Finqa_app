@@ -15,11 +15,17 @@ function ChatPage() {
     const [selectedCompany, setSelectedCompany] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [companyList, setCompanyList] = useState([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const chatEndRef = useRef(null);
     const navigate = useNavigate();
 
     const { setLoading } = useLoader();
+
+    // ✅ Function to toggle sidebar
+    const toggleSidebar = () => {
+            setIsSidebarOpen((prev) => !prev);
+        };
 
     useEffect(() => {
     // Add a global request interceptor
