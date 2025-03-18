@@ -549,6 +549,7 @@ html, body {
     .chat-app-input-section {
         flex-direction: column;
         align-items: stretch;
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     .chat-app-input {
@@ -557,11 +558,26 @@ html, body {
 
     /* ✅ Ensure buttons remain side-by-side */
     .chat-app-button-group {
+        display: flex;
         justify-content: space-between;
+        padding-bottom: 12px;
     }
 
     .chat-app-send-btn,
     .chat-app-new-chat-btn {
         flex: 1;
+        min-width: 48%;
+    }
+}
+
+/* ✅ Fix for Very Small Screens */
+@media (max-width: 400px) {
+    .chat-app-button-group {
+        flex-direction: column;
+    }
+
+    .chat-app-send-btn,
+    .chat-app-new-chat-btn {
+        width: 100%; /* ✅ Stack buttons on very small screens */
     }
 }
