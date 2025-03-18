@@ -4,20 +4,26 @@ html, body {
     overflow: hidden; /* ✅ Prevents extra scroll */
 }
 
-/* ✅ Prevent Extra Spacing on Small Screens */
+/* ✅ Only for Small Screens (Lift Input Box Higher) */
 @media (max-width: 600px) {
-    .chat-app-container {
-        height: 100vh; /* ✅ Ensures full height */
-        overflow: hidden; /* ✅ Prevents unwanted scrolling */
-    }
-
     .chat-app-window {
-        height: calc(100vh - 60px); /* ✅ Ensures chat window fits */
-        padding: 12px;
+        height: calc(100vh - 140px); /* ✅ Reduce chat window height slightly */
+        padding: 10px;
     }
 
     .chat-app-input-section {
-        padding: 10px; /* ✅ Reduces extra space */
+        bottom: 15px; /* ✅ Lifts input box up ONLY on small screens */
+        margin-bottom: 20px;
+    }
+
+    .chat-app-button-group {
+        justify-content: space-between;
+    }
+
+    .chat-app-send-btn,
+    .chat-app-new-chat-btn {
+        flex: 1; /* ✅ Ensures equal width */
+        min-width: 45%;
     }
 }
 
